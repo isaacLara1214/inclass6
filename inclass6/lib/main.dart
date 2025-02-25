@@ -48,9 +48,40 @@ void setupWindow() {
 /// _not_ depend on Provider.
 class Counter with ChangeNotifier {
   int value = 0;
+  String milestone = '';
+  int milestoneValue = 0;
+
+  void checkMilestone() {
+    if (value >= 0 && value <= 12) {
+      milestone = 'Youre a child';
+      milestoneValue = 1;
+    } else if (value >= 13 && value <= 19) {
+      milestone = 'Teenager time!';
+      milestoneValue = 2;
+    } else if (value >= 20 && value <= 30) {
+      milestone = "You're a young adult!";
+      milestoneValue = 3;
+    } else if (value >= 31 && value <= 50) {
+      milestone = "You're an adult now!";
+      milestoneValue = 4;
+    } else if (value >= 50) {
+      milestone = 'Golden years!';
+      milestoneValue = 5;
+    }
+  }
 
   void increment() {
     value += 1;
+    checkMilestone();
+    notifyListeners();
+  }
+
+  void decrement() {
+    if (value == 0) {
+      return;
+    }
+    value -= 1;
+    checkMilestone();
     notifyListeners();
   }
 }
@@ -60,13 +91,56 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(),
+    return Consumer<Counter>(
+      builder: (context, counter, child) {
+        Color appBarColor;
+        Color buttonColor;
+
+        switch (counter.milestoneValue) {
+          case 1:
+            appBarColor = Colors.blue;
+            buttonColor = Colors.blue;
+            break;
+          case 2:
+            appBarColor = Colors.green;
+            buttonColor = Colors.green;
+            break;
+          case 3:
+            appBarColor = Colors.orange;
+            buttonColor = Colors.orange;
+            break;
+          case 4:
+            appBarColor = Colors.red;
+            buttonColor = Colors.red;
+            break;
+          case 5:
+            appBarColor = Colors.purple;
+            buttonColor = Colors.purple;
+            break;
+          default:
+            appBarColor = Colors.blue;
+            buttonColor = Colors.blue;
+        }
+
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            useMaterial3: true,
+            appBarTheme: AppBarTheme(
+              backgroundColor: appBarColor,
+              foregroundColor: Colors.white,
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+          home: const MyHomePage(),
+        );
+      },
     );
   }
 }
@@ -74,52 +148,40 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
 
+  get style => null;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Demo Home Page'),
+        title: const Text('Age Counter'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('You have pushed the button this many times:'),
-            // Consumer looks for an ancestor Provider widget
-            // and retrieves its model (Counter, in this case).
-            // Then it uses that model to build widgets, and will trigger
-            // rebuilds if the model is updated.
             Consumer<Counter>(
               builder: (context, counter, child) => Text(
-                '${counter.value}',
+                'I am ${counter.value} years old',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
+            ElevatedButton(
+                style: style,
+                onPressed: () {
+                  var counter = context.read<Counter>();
+                  counter.increment();
+                },
+                child: const Text('Increase Age')),
+            ElevatedButton(
+                style: style,
+                onPressed: () {
+                  var counter = context.read<Counter>();
+                  counter.decrement();
+                },
+                child: const Text('Decrease Age')),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // You can access your providers anywhere you have access
-          // to the context. One way is to use Provider.of<Counter>(context).
-          // The provider package also defines extension methods on the context
-          // itself. You can call context.watch<Counter>() in a build method
-          // of any widget to access the current state of Counter, and to ask
-          // Flutter to rebuild your widget anytime Counter changes.
-          //
-          // You can't use context.watch() outside build methods, because that
-          // often leads to subtle bugs. Instead, you should use
-          // context.read<Counter>(), which gets the current state
-          // but doesn't ask Flutter for future rebuilds.
-          //
-          // Since we're in a callback that will be called whenever the user
-          // taps the FloatingActionButton, we are not in the build method here.
-          // We should use context.read().
-          var counter = context.read<Counter>();
-          counter.increment();
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
